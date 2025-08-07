@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hunga Tonga Cinematic Zoom</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+
+  <!-- Scene 1 + Scene 1.5 -->
+  <section class="intro-scene">
+    <video class="static-earth" autoplay muted loop playsinline>
+      <source src="assets/static-earth.mp4" type="video/mp4" />
+    </video>
+
+    <p class="intro-text watcher-text">
+      Let's revisit an event that happened far off from us...<br>
+      yet affecting us.
+    </p>
+
+    <!-- Appears after video fades out -->
+    <p class="intro-text location-text" id="locationText">
+      Let’s go to the location.<br>
+      <span class="scroll-down">↓ Scroll Down ↓</span>
+    </p>
+
+    <div class="left-mask"></div>
+  </section>
+
+  <!-- Scene 2 (Zoom sequence) -->
+  <section class="scene-two">
+    <div class="image-sequence-container" id="imageSequenceContainer">
+<img id="sequenceImage" src="" alt="Zoom Sequence Frame">                   
+      <p class="hunga-text">Hunga Tonga</p>
+    </div>
+    <div class="scroll-space"></div>
+  </section>
+
+  <!-- Scene 3: Event Introduction and Video -->
+
+<!-- Spacer to delay the appearance until frame 455 scrolls out -->
+<div style="height: 120vh;"></div>
+
+<section class="event-section">
+  <div class="event-text">
+    <p>Let's see, what happened here on </p>
+      <p>January 22, 2022.</p>
+  </div>
+
+  <!-- Scroll Trigger Marker -->
+  <div class="trigger-marker" id="videoTriggerMarker"></div>
+
+  <div class="video-wrapper" id="eventVideoWrapper">
+    <video id="eventVideo" muted playsinline>
+      <source src="assets/hunga-eruption.mp4" type="video/mp4" />
+    </video>
+  </div>
+</section>
+
+<!-- Scene 4: Key Facts Section -->
+<section class="facts-section">
+  <div class="fact-line left">
+    <span class="fact-number">150m</span> below sea level – the volcano’s summit
+  </div>
+  <div class="fact-line right">
+    <span class="fact-number">Mesosphere</span> reached by water vapor for the first time
+  </div>
+  <div class="fact-line left">
+    <span class="fact-number">10%</span> more water vapor than usual reached the stratosphere
+  </div>
+  <div class="fact-line right">
+    <span class="fact-number">+0.035°C</span> estimated global temp rise due to vapor trap
+  </div>
+  <div class="fact-line left">
+    <span class="fact-number">7×</span> pressure waves circled the Earth
+  </div>
+</section>
+
+<!-- Spacer between facts and intro -->
+<div class="spacer"></div>
+
+<!-- INTRO TEXT SECTION -->
+<h2 class="intro-heading">
+  From here on, we will see what were the aftermath of this eruption.
+</h2>
+
+<!-- Spacer between intro and chart -->
+<div class="spacer"></div>
+
+<!-- TEMPERATURE CHART SECTION -->
+<section id="chart-section" class="chart-section">
+  <h3 class="chart-title">Monthly Global Temperature Rise</h3>
+
+  <div class="chart-container">
+    <canvas id="tempChart" width="800" height="400"></canvas>
+  </div>
+</section>
+
+<!-- Chart.js + PapaParse -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<script>
+  let chartInstance;
+  let dataLabels = [], dataPoints = [], reasons = [];
+  let hasAnimated = false;
+
+  async function loadTemperatureData() {
+    const response = await fetch('assets/monthly_chart.csv');
+    const text = await response.text();
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+
+    dataLabels = parsed.data.map(row => row.Month.trim());
+    dataPoints = parsed.data.map(row => parseFloat(row.Temperature));
+    reasons = parsed.data.map(row => row.Reason);
+  }
+
+  async function createTemperatureChart() {
+    if (!dataLabels.length) await loadTemperatureData();
+
+    const ctx = document.getElementById('tempChart').getContext('2d');
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dataLabels,
+        datasets: [{
+          label: 'Temperature Rise (°C)',
+          data: [],
+          fill: false,
+          borderColor: 'red',
+          borderWidth: 2,
+          pointBackgroundColor: 'white',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              afterLabel: function (context) {
+                return `Reason: ${reasons[context.dataIndex]}`;
+              }
+            }
+          },
+          legend: {
+            labels: {
+              color: 'white'
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Month',
+              color: 'white'
+            },
+            ticks: {
+              color: 'white'
+            },
+            grid: {
+              color: 'rgba(255,255,255,0.1)'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Temperature Rise (°C)',
+              color: 'white'
+            },
+            min: 0.75,
+            max: 1.0,
+            ticks: {
+              stepSize: 0.025,
+              color: 'white'
+            },
+            grid: {
+              color: 'rgba(255,255,255,0.1)'
+            }
+          }
+        },
+        animation: false
+      }
+    });
+
+    let index = 0;
+    function drawNextPoint() {
+      if (index < dataPoints.length) {
+        chartInstance.data.datasets[0].data.push(dataPoints[index]);
+        chartInstance.update();
+        index++;
+        setTimeout(drawNextPoint, 300);
+      }
+    }
+
+    drawNextPoint();
+  }
+
+  // Replay button
+  document.getElementById('replayChart').addEventListener('click', () => {
+    createTemperatureChart();
+  });
+
+  // Reveal + Animate
+  const chartSection = document.querySelector('.chart-section');
+  const chartAnimateObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !hasAnimated) {
+        hasAnimated = true;
+        createTemperatureChart();
+        chartAnimateObserver.disconnect();
+      }
+    });
+  }, { threshold: 1 });
+
+  chartAnimateObserver.observe(document.getElementById('tempChart'));
+</script>
+
+<!-- ISOTYPE CHART SECTION -->
+<section id="isotype-chart" style="display: flex; align-items: center; justify-content: space-between; padding: 5rem 2rem; background-color: black; color: white; display: none; opacity: 0; transition: opacity 1s;">
+  <!-- LEFT SIDE (Volcano + Text) -->
+  <div style="flex: 1; text-align: center;">
+    <img src="steamb.jpeg" alt="Steam Volcano" style="width: 100%; max-width: 300px; height: auto; margin: 0 auto; display: block;">
+    <p style="margin-top: 1rem; font-size: 1.2rem;">Water Vapor Released: 146 Tg (teragrams)</p>
+  </div>
+
+  <!-- RIGHT SIDE (Animated Planes) -->
+  <div id="plane-container" style="flex: 2; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center;">
+    <!-- 30 planes will be injected here -->
+  </div>
+</section>
+
+<!-- TEXT BELOW PLANES -->
+<div id="isotype-caption" style="text-align: center; background-color: black; color: white; padding: 1rem 2rem; font-size: 1.1rem; display: none; opacity: 0; transition: opacity 1s;">
+  Equivalent to 30 years of global aviation
+</div>
+
+<script>
+  // Intersection Observer to reveal isotype chart when visible
+  const isotypeSection = document.getElementById("isotype-chart");
+  const planeContainer = document.getElementById("plane-container");
+  const caption = document.getElementById("isotype-caption");
+
+  let isotypeRevealed = false;
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !isotypeRevealed) {
+        isotypeRevealed = true;
+        isotypeSection.style.display = 'flex';
+        setTimeout(() => isotypeSection.style.opacity = 1, 100);
+
+        // Animate planes one by one
+        for (let i = 0; i < 30; i++) {
+          setTimeout(() => {
+            const plane = document.createElement("img");
+            plane.src = "plane_isotype.png";
+            plane.style.width = "40px";
+            plane.style.height = "auto";
+            plane.style.opacity = 0;
+            plane.style.transition = "opacity 0.5s";
+            planeContainer.appendChild(plane);
+            requestAnimationFrame(() => {
+              plane.style.opacity = 1;
+            });
+          }, i * 150);
+        }
+
+        setTimeout(() => {
+          caption.style.display = 'block';
+          setTimeout(() => caption.style.opacity = 1, 100);
+        }, 30 * 150 + 500);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  observer.observe(document.querySelector("#chart-section")); // adjust this selector if needed
+</script>
+
+  <script src="script.js"></script>
+</body>
+</html>

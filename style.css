@@ -1,0 +1,357 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ===== Scene 1 ===== */
+.intro-scene {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.static-earth {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-20%);
+  width: 150%;
+  height: 110%;
+  object-fit: cover;
+  opacity: 0.5;
+  animation:
+    earthOpacityUp 1.5s ease-in forwards 3.5s,
+    earthFadeOut 1.5s ease-in-out forwards 6s;
+  z-index: 1;
+}
+
+@keyframes earthOpacityUp { to { opacity: 1; } }
+@keyframes earthFadeOut { to { opacity: 0; } }
+
+.intro-text {
+  font-size: 2rem;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+
+.watcher-text {
+  opacity: 0;
+  animation: fadeText 5s ease-in-out forwards;
+}
+@keyframes fadeText {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.location-text {
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  animation: fadeInAfterVideo 2s ease-in-out forwards;
+  animation-delay: 7.5s;
+  z-index: 4;
+}
+
+@keyframes fadeInAfterVideo {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Blinking Scroll Text */
+.scroll-down {
+  font-size: 1.5rem;
+  display: inline-block;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+@keyframes pulse {
+  0% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(8px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0.7; }
+}
+
+.left-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: black;
+  z-index: 3;
+}
+
+/* ===== Scene 2: Zoom Sequence ===== */
+.image-sequence-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: transform 1s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.image-sequence-container.tilt-upward {
+  transform: perspective(1000px) rotateX(45deg);
+}
+
+.image-sequence-container.tilt-reset {
+  transform: perspective(1000px) rotateX(0deg);
+}
+
+.image-sequence-container img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.scroll-space {
+  height: 350vh;
+}
+
+/* Hunga Tonga label on last frame */
+.hunga-text {
+  position: absolute;
+  bottom: 12%;
+  font-size: 3rem;
+  font-weight: bold;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+}
+
+/* ===== Scene 3: Event Text + Video Section ===== */
+.event-section {
+  position: relative;
+  min-height: 300vh;
+  background: black;
+  color: white;
+}
+
+.event-text {
+  position: sticky;
+  top: 30%;
+  text-align: center;
+  font-size: 2.5rem;
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+  z-index: 2;
+  padding-top: 10vh;
+}
+
+.trigger-marker {
+  height: 100vh; /* Takes up space to allow scrolling */
+  background: transparent;
+}
+
+.video-wrapper {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none; /* prevent accidental click */
+  transition: opacity 1.5s ease-in-out;
+  z-index: 1;
+  padding: 2rem 0; /* Optional vertical padding */
+}
+
+.video-wrapper video {
+  width: 80vw;
+  max-width: 960px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.2); /* Optional: subtle shadow for separation */
+}
+
+.facts-section {
+  background-color: black;
+  padding: 15vh 5vw;
+  min-height: 100vh;
+  position: relative;
+}
+
+.fact-line {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 400;
+  opacity: 0;
+  position: absolute;
+  transition: all 1s ease-out;
+  max-width: 40vw;
+  white-space: nowrap;
+}
+
+/* Red number glow + size */
+.fact-number {
+  color: red;
+  font-size: 3.2rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
+  text-shadow: 0 0 10px red;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Entry animations */
+.fact-line.left.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.fact-line.right.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Off-screen initial states */
+.fact-line.left {
+  transform: translateX(-50px);
+}
+
+.fact-line.right {
+  transform: translateX(50px);
+}
+
+/* Staggered cinematic layout */
+.fact-line:nth-child(1) { top: 18%; left: 10%; }
+.fact-line:nth-child(2) { top: 34%; right: 12%; }
+.fact-line:nth-child(3) { top: 50%; left: 12%; }
+.fact-line:nth-child(4) { top: 66%; right: 15%; }
+.fact-line:nth-child(5) { top: 80%; left: 14%; }
+
+/* Red number glow animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    text-shadow: 0 0 10px red;
+  }
+  50% {
+    text-shadow: 0 0 20px red;
+  }
+}
+
+.spacer {
+  height: 40vh; /* Previously 100vh — adjust as needed */
+}
+ /* or adjust based on how much space you want */
+
+.intro-section {
+  background-color: black;
+  color: white;
+  padding: 5rem 2rem;
+  display: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.intro-heading {
+  text-align: center;
+  font-size: 1.5rem;
+  margin: 0 auto;
+}
+
+.chart-section {
+  margin-top: 80px;
+  padding: 0 40px;
+  text-align: center;
+  opacity: 1; /* temporarily keep it visible for debug */
+  transition: opacity 1s ease;
+}
+
+.chart-section h3.chart-title {
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.chart-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  position: relative;
+  height: 600px; /* Increased height */
+}
+
+#tempChart {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.isotype-section {
+  background-color: black;
+  color: white;
+  padding: 4rem 2rem;
+  display: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+
+.isotype-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: auto;
+  gap: 2rem;
+}
+
+.isotype-left {
+  flex: 1;
+  min-width: 250px;
+  text-align: center;
+}
+
+.isotype-left img {
+  max-width: 100%;
+  height: auto;
+}
+
+.isotype-left p {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+}
+
+.isotype-right {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  justify-items: center;
+  min-width: 250px;
+}
+
+.plane-icon {
+  width: 50px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+
+
+
+
+
+
+
