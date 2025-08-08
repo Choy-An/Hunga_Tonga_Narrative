@@ -4,17 +4,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const hungaText = document.querySelector(".hunga-text");
   const container = document.getElementById("imageSequenceContainer");
 
-  // New: Select video section elements
   const eventText = document.querySelector(".event-text");
   const videoTrigger = document.getElementById("videoTriggerMarker");
   const eventVideoWrapper = document.getElementById("eventVideoWrapper");
   const eventVideo = document.getElementById("eventVideo");
 
-  const frameCount = 456; // 0–455
+  const frameCount = 456;
   const framePath = index =>
     `assets/zoom-sequence/hunga-zoom_${String(index).padStart(3, '0')}.jpeg`;
 
-  // Preload images
   const preloadImages = () => {
     for (let i = 0; i < frameCount; i++) {
       const img = new Image();
@@ -25,22 +23,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let hasPlayed = false;
 
-  // Scroll handler
   window.addEventListener("scroll", () => {
-    // ===== Scene 2: Image Sequence Scroll Logic =====
     const rect = document.querySelector(".scroll-space").getBoundingClientRect();
     let scrollProgress = Math.min(
       Math.max((window.innerHeight - rect.top) / rect.height, 0),
       1
     );
 
-    // Fade out scroll-down text
     if (scrollProgress > 0 && window.getComputedStyle(locationText).opacity !== "0") {
       locationText.style.transition = "opacity 0.8s ease";
       locationText.style.opacity = "0";
     }
 
-    // Slow cinematic effect for last frames
     const slowStartFrame = 445;
     const slowEndFrame = 455;
     const slowStart = slowStartFrame / frameCount;
@@ -70,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
       hungaText.style.transform = "scale(0.95)";
     }
 
-    // ===== Scene 3: Trigger Video Section =====
     const triggerRect = videoTrigger.getBoundingClientRect();
     const isTriggered = triggerRect.top < window.innerHeight * 0.6;
 
@@ -91,144 +84,150 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-const factLines = document.querySelectorAll(".fact-line");
+  const factLines = document.querySelectorAll(".fact-line");
 
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting && !entry.target.classList.contains("show")) {
-      const index = [...factLines].indexOf(entry.target);
-      setTimeout(() => {
-        entry.target.classList.add("show");
-      }, index * 400); // Staggered delay
-    }
-  });
-}, { threshold: 0.1 });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !entry.target.classList.contains("show")) {
+        const index = [...factLines].indexOf(entry.target);
+        setTimeout(() => {
+          entry.target.classList.add("show");
+        }, index * 400);
+      }
+    });
+  }, { threshold: 0.1 });
 
-factLines.forEach((line) => {
-  observer.observe(line);
-});
-
-// Load and draw the chart
-// Load CSV from assets
-async function loadTemperatureData() {
-  const response = await fetch('assets/monthly_chart.csv');
-  const text = await response.text();
-  const lines = text.trim().split('\n').slice(1);
-
-  const labels = [];
-  const dataPoints = [];
-  const reasons = [];
-
-  lines.forEach(line => {
-    const [month, temp, reason] = line.split(',');
-    labels.push(month);
-    dataPoints.push(parseFloat(temp));
-    reasons.push(reason.replace(/^"|"$/g, '')); // remove quotes
+  factLines.forEach((line) => {
+    observer.observe(line);
   });
 
-  return { labels, dataPoints, reasons };
-}
+  // ========== CHART SECTION LOGIC ==========
 
-async function createTemperatureChart() {
-  const { labels, dataPoints, reasons } = await loadTemperatureData();
+  Papa.parse('assets/monthly_chart.csv', {
+    download: true,
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      const labels = [];
+      const temperatureData = [];
+      const baselineData = [];
+      const animatedData = [];
+      const reasons = [];
 
-  const ctx = document.getElementById('tempChart').getContext('2d');
+      results.data.forEach(row => {
+        if (
+          row['Month'] &&
+          !isNaN(row['Temperature']) &&
+          !isNaN(row['Baseline_Temperature'])
+        ) {
+          labels.push(row['Month']);
+          temperatureData.push(row['Temperature']);
+          baselineData.push(row['Baseline_Temperature']);
+          animatedData.push(null);
+          reasons.push(row['Reason'] || '');
+        }
+      });
 
-  const tempChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Temperature Rise (°C)',
-        data: dataPoints,
-        fill: false,
-        borderColor: 'red',
-        borderWidth: 2,
-        pointBackgroundColor: 'white',
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        tooltip: {
-          callbacks: {
-            afterLabel: function(context) {
-              return `Reason: ${reasons[context.dataIndex]}`;
+      const ctx = document.getElementById('tempChart').getContext('2d');
+
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Temperature Rise (°C)',
+              data: animatedData,
+              borderColor: 'red',
+              borderWidth: 2,
+              tension: 0.4,
+              pointBackgroundColor: 'white',
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Baseline Temperature (°C)',
+              data: baselineData,
+              borderColor: 'white',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              tension: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          animation: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const idx = context.dataIndex;
+                  const reason = reasons[idx];
+                  return reason ? reason : `${context.dataset.label}: ${context.formattedValue}`;
+                }
+              }
+            },
+            legend: {
+              labels: {
+                color: 'white'
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Month',
+                color: 'white',
+                font: {
+                  weight: 'bold'
+                }
+              },
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Temperature Anomaly (°C)',
+                color: 'white',
+                font: {
+                  weight: 'bold'
+                }
+              },
+              ticks: {
+                color: 'white'
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
             }
           }
-        },
-        legend: {
-          labels: {
-            color: 'white'
-          }
         }
-      },
-      scales: {
-        x: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        },
-        y: {
-          ticks: { color: 'white' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
+      });
+
+      let currentIndex = 0;
+
+      function animateChart() {
+        if (currentIndex < temperatureData.length) {
+          animatedData[currentIndex] = temperatureData[currentIndex];
+          chart.update();
+          currentIndex++;
+          requestAnimationFrame(animateChart);
         }
-      },
-      animation: {
-        duration: 2000,
-        easing: 'easeInOutQuart'
       }
+
+      animateChart();
     }
   });
-}
 
-createTemperatureChart();
-
-// Watch when chart section is out of view
-const chartSection = document.getElementById('chartContainer');
-const isotypeSection = document.getElementById('isotypeSection');
-const planeContainer = document.getElementById('planeContainer');
-
-let hasAnimatedPlanes = false;
-
-function isChartOutOfView() {
-  const rect = chartSection.getBoundingClientRect();
-  return rect.bottom < 0;
-}
-
-function showIsotypeSection() {
-  isotypeSection.style.display = 'block';
-  setTimeout(() => {
-    isotypeSection.style.opacity = 1;
-  }, 50);
-}
-
-function animatePlanes() {
-  if (hasAnimatedPlanes) return;
-  hasAnimatedPlanes = true;
-
-  for (let i = 0; i < 30; i++) {
-    const plane = document.createElement('img');
-    plane.src = 'plane_isotype.png';
-    plane.classList.add('plane-icon');
-    planeContainer.appendChild(plane);
-
-    setTimeout(() => {
-      plane.style.opacity = 1;
-    }, i * 200); // 200ms delay between each plane
-  }
-}
-
-window.addEventListener('scroll', () => {
-  if (isChartOutOfView()) {
-    showIsotypeSection();
-    animatePlanes();
-  }
-});
-
-
-  // Set initial frame
   sequenceImage.src = framePath(0);
 });
+

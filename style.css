@@ -301,31 +301,36 @@ body {
 .isotype-section {
   background-color: black;
   color: white;
-  padding: 4rem 2rem;
+  padding: 6rem 2rem 4rem 2rem;
   display: none;
   opacity: 0;
   transition: opacity 1s;
+  margin-top: 20rem; /* Extra space from previous chart */
 }
 
 .isotype-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: center;
+  align-items: flex-start; /* Align right side to top of left image */
   max-width: 1200px;
   margin: auto;
-  gap: 2rem;
+  gap: 6rem; /* Bigger gap between left and right */
 }
 
 .isotype-left {
   flex: 1;
-  min-width: 250px;
+  min-width: 280px;
+  max-width: 380px;
   text-align: center;
 }
 
 .isotype-left img {
   max-width: 100%;
   height: auto;
+  mix-blend-mode: screen;
+  filter: brightness(1.5) contrast(1.3) saturate(1.2) blur(0.3px);
+  transition: filter 0.3s;
 }
 
 .isotype-left p {
@@ -336,17 +341,64 @@ body {
 .isotype-right {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);  /* 4 columns */
+  grid-template-rows: repeat(7, auto);    /* 7 rows */
+  gap: 1rem 1.2rem;
   justify-items: center;
-  min-width: 250px;
+  min-width: 300px;
+  align-self: flex-start; /* Align to top of container */
 }
 
 .plane-icon {
-  width: 50px;
+  width: 90px;
+  max-width: 100%;
   opacity: 0;
   transition: opacity 0.3s ease-in;
 }
+
+.isotype-alignment-helper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  text-align: center;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.caption-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 500;
+  width: 100%;
+  max-width: 1000px;
+  margin: -6rem auto 0; /* You can reduce 2rem if needed */
+  padding: 0 2rem;
+
+  /* ↓ Add this to remove extra space below */
+  margin-bottom: -25rem;
+}
+
+
+.caption-left {
+  text-align: left;
+}
+
+.caption-right {
+  text-align: right;
+}
+
+.highlight {
+  font-weight: bold;
+  color: #004080;
+  background-color: #e6f2ff; /* light blue background */
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
 
 
 

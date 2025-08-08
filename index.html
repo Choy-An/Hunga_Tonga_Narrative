@@ -11,9 +11,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
-<body>
+<body
 
   <!-- Scene 1 + Scene 1.5 -->
   <section class="intro-scene">
@@ -98,198 +98,165 @@
 <!-- TEMPERATURE CHART SECTION -->
 <section id="chart-section" class="chart-section">
   <h3 class="chart-title">Monthly Global Temperature Rise</h3>
-
   <div class="chart-container">
     <canvas id="tempChart" width="800" height="400"></canvas>
   </div>
 </section>
 
-<!-- Chart.js + PapaParse -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <script>
-  let chartInstance;
-  let dataLabels = [], dataPoints = [], reasons = [];
-  let hasAnimated = false;
+  let chart;
 
-  async function loadTemperatureData() {
-    const response = await fetch('assets/monthly_chart.csv');
-    const text = await response.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+  const labels = ['Dec 21','Jan 22', 'Feb 22', 'Mar 22', 'Apr 22', 'May 22', 'Jun 22', 'Jul 22', 'Aug 22', 'Sep 22', 'Oct 22', 'Nov 22', 'Dec 22', 'Jan 23'];
+  const tempData = [0.83, 0.89, 0.85, 0.82, 0.8, 0.78, 0.76, 0.78, 0.8, 0.82, 0.85, 0.87, 0.89, 0.87];
+  const baselineData = [0.83, 0.834, 0.832, 0.836, 0.838, 0.84, 0.842, 0.844, 0.846, 0.848, 0.85, 0.852, 0.854, 0.856];
 
-    dataLabels = parsed.data.map(row => row.Month.trim());
-    dataPoints = parsed.data.map(row => parseFloat(row.Temperature));
-    reasons = parsed.data.map(row => row.Reason);
-  }
+  const animatedData = Array(tempData.length).fill(null);
 
-  async function createTemperatureChart() {
-    if (!dataLabels.length) await loadTemperatureData();
+  const ctx = document.getElementById('tempChart').getContext('2d');
 
-    const ctx = document.getElementById('tempChart').getContext('2d');
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dataLabels,
-        datasets: [{
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
           label: 'Temperature Rise (°C)',
-          data: [],
-          fill: false,
+          data: animatedData,
           borderColor: 'red',
           borderWidth: 2,
+          tension: 0.4,
           pointBackgroundColor: 'white',
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          tension: 0.4
-        }]
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Baseline Temperature (°C)',
+          data: baselineData,
+          borderColor: 'white',
+          borderWidth: 2,
+          borderDash: [4, 4],
+          tension: 0,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: 'white'
+          }
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              afterLabel: function (context) {
-                return `Reason: ${reasons[context.dataIndex]}`;
-              }
-            }
+      scales: {
+        x: {
+          ticks: {
+            color: 'white'
           },
-          legend: {
-            labels: {
-              color: 'white'
-            }
+          grid: {
+            color: 'rgba(255,255,255,0.1)'
           }
         },
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Month',
-              color: 'white'
-            },
-            ticks: {
-              color: 'white'
-            },
-            grid: {
-              color: 'rgba(255,255,255,0.1)'
-            }
+        y: {
+          ticks: {
+            color: 'white'
           },
-          y: {
-            title: {
-              display: true,
-              text: 'Temperature Rise (°C)',
-              color: 'white'
-            },
-            min: 0.75,
-            max: 1.0,
-            ticks: {
-              stepSize: 0.025,
-              color: 'white'
-            },
-            grid: {
-              color: 'rgba(255,255,255,0.1)'
-            }
+          grid: {
+            color: 'rgba(255,255,255,0.1)'
           }
-        },
-        animation: false
-      }
-    });
-
-    let index = 0;
-    function drawNextPoint() {
-      if (index < dataPoints.length) {
-        chartInstance.data.datasets[0].data.push(dataPoints[index]);
-        chartInstance.update();
-        index++;
-        setTimeout(drawNextPoint, 300);
+        }
       }
     }
-
-    drawNextPoint();
-  }
-
-  // Replay button
-  document.getElementById('replayChart').addEventListener('click', () => {
-    createTemperatureChart();
   });
 
-  // Reveal + Animate
-  const chartSection = document.querySelector('.chart-section');
-  const chartAnimateObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && !hasAnimated) {
-        hasAnimated = true;
-        createTemperatureChart();
-        chartAnimateObserver.disconnect();
-      }
-    });
-  }, { threshold: 1 });
+  let currentIndex = 0;
+  function animateChart() {
+    if (currentIndex < tempData.length) {
+      animatedData[currentIndex] = tempData[currentIndex];
+      chart.update('none');
+      currentIndex++;
+      requestAnimationFrame(animateChart);
+    }
+  }
 
-  chartAnimateObserver.observe(document.getElementById('tempChart'));
+  animateChart();
 </script>
 
-<!-- ISOTYPE CHART SECTION -->
-<section id="isotype-chart" style="display: flex; align-items: center; justify-content: space-between; padding: 5rem 2rem; background-color: black; color: white; display: none; opacity: 0; transition: opacity 1s;">
-  <!-- LEFT SIDE (Volcano + Text) -->
-  <div style="flex: 1; text-align: center;">
-    <img src="steamb.jpeg" alt="Steam Volcano" style="width: 100%; max-width: 300px; height: auto; margin: 0 auto; display: block;">
-    <p style="margin-top: 1rem; font-size: 1.2rem;">Water Vapor Released: 146 Tg (teragrams)</p>
-  </div>
 
-  <!-- RIGHT SIDE (Animated Planes) -->
-  <div id="plane-container" style="flex: 2; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center;">
-    <!-- 30 planes will be injected here -->
+
+<!-- ISOTYPE CHART SECTION -->
+<section id="isotype-chart" class="isotype-section">
+  <div class="isotype-container">
+    <!-- LEFT SIDE (Volcano + Text) -->
+    <div class="isotype-left">
+      <img src="assets/steamb.jpeg" alt="Steam Volcano">
+     
+    </div>
+
+    <!-- RIGHT SIDE (Planes) -->
+    <div id="plane-container" class="isotype-right">
+      <!-- Planes will be injected here -->
+    </div>
   </div>
 </section>
 
 <!-- TEXT BELOW PLANES -->
-<div id="isotype-caption" style="text-align: center; background-color: black; color: white; padding: 1rem 2rem; font-size: 1.1rem; display: none; opacity: 0; transition: opacity 1s;">
-  Equivalent to 30 years of global aviation
+<div id="isotype-caption" style="display: none; opacity: 0;">
+  <div class="caption-row">
+  <span class="caption-left">
+    Water Vapor Released: <span class="highlight">146 Tg</span> (teragrams)
+  </span>
+  <span class="caption-right">
+    Equivalent to <span class="highlight">30 years</span> of global aviation
+  </span>
+</div>
+
 </div>
 
 <script>
-  // Intersection Observer to reveal isotype chart when visible
   const isotypeSection = document.getElementById("isotype-chart");
   const planeContainer = document.getElementById("plane-container");
   const caption = document.getElementById("isotype-caption");
 
   let isotypeRevealed = false;
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting && !isotypeRevealed) {
         isotypeRevealed = true;
+
         isotypeSection.style.display = 'flex';
         setTimeout(() => isotypeSection.style.opacity = 1, 100);
 
-        // Animate planes one by one
+        // Animate 30 planes
         for (let i = 0; i < 30; i++) {
           setTimeout(() => {
             const plane = document.createElement("img");
-            plane.src = "plane_isotype.png";
-            plane.style.width = "40px";
-            plane.style.height = "auto";
-            plane.style.opacity = 0;
-            plane.style.transition = "opacity 0.5s";
+            plane.src = "assets/plane_isotype.png";
+            plane.classList.add("plane-icon");
             planeContainer.appendChild(plane);
             requestAnimationFrame(() => {
               plane.style.opacity = 1;
             });
-          }, i * 150);
+          }, i * 100);
         }
 
+        // Show caption after animation
         setTimeout(() => {
           caption.style.display = 'block';
           setTimeout(() => caption.style.opacity = 1, 100);
-        }, 30 * 150 + 500);
+        }, 30 * 100 + 500);
       }
     });
-  }, { threshold: 0.5 });
+  }, 
+  {
+    threshold: 0.5
+  });
 
-  observer.observe(document.querySelector("#chart-section")); // adjust this selector if needed
+  // Observe element after animated chart ends
+  observer.observe(document.querySelector("#chart-section")); // Replace with correct final animated chart container ID
 </script>
 
   <script src="script.js"></script>
